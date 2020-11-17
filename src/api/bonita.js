@@ -28,8 +28,11 @@ export const startProcess = async () => {
   const processId = await getProcessId('Testeo de medicamentos');
     
   const res = await doTheRequest('POST', `${url}/API/bpm/process/${processId}/instantiation`);
+  const caseId = res.data.caseId;
 
-  return res.data.caseId;
+  await updateProcessCaseVariable(caseId, 'caseId', 'java.lang.Integer', caseId);
+
+  return caseId;
 
 }
 
