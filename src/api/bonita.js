@@ -1,27 +1,27 @@
-const url = 'http://localhost:8080/bonita/';
+const url = 'http://localhost:8080/bonita';
 
 //los valores para el auth con bonita
-const bonitaToken = 'c9fe99c5-f1a3-47d8-bac7-94e8a96c88ce';
-const bonitaCookie = 'JSESSIONID='+'DC0B75A5188CF79A3049A182BF0811A9'+'; '+
-'X-Bonita-API-Token='+bonitaToken;
-
-
+function getCookie(name) {
+  const value = `; ${document.cookie}`;
+  const parts = value.split(`; ${name}=`);
+  if (parts.length === 2) return parts.pop().split(';').shift();
+}
 
 export const signIn = async () => {
-  const res = await doTheRequest('POST',`${url}/loginservice`,
-    new URLSearchParams({
+  const res = await fetch(`${url}/loginservice`, {
+    method: 'POST',
+    body: new URLSearchParams({
       'username': 'walter.bates',
       'password': 'Prueba.123',
       'redirect': 'false'
-    }));    
+    }),
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded",
+    },
+    credentials: 'include',
+  });
   
-  const token = res.headers['set-cookie'].find(cookie => cookie.startsWith('X-Bonita-API'));
-  const sessionId = res.headers['set-cookie'].find(cookie => cookie.startsWith('JSESSION'));
-  
-  return {
-    bonitaToken: (token.split('=')[1]).split(';')[0],
-    JSESSIONID: (sessionId.split('=')[1]).split(';')[0],
-  }
+  return res;    
 };
 
 export const startProcess = async () => {
@@ -93,47 +93,49 @@ export const getArchivedCases = async() => {
 }
 
 export const getCountCases = async() => {
-  const res = await doTheRequest('GET', 'API/bpm/case?p=0&c=1000');
+  const res = await doTheRequest('GET', `${url}/API/bpm/case?p=0&c=1000`);
 
-  return count(res.data);
+  return (res.data.length);
 }
 
 export const getTasks = async() => {
-  const res = await doTheRequest('GET', 'API/bpm/humanTask?p=0&c=1000');
+
+  const res = await doTheRequest('GET', `${url}/API/bpm/humanTask?p=0&c=1000`);
   
-  return count(res.data);
+  return res.json();
 }
 
 export const getArchivedTasks = async() => {
-  const res = await doTheRequest('GET', 'API/bpm/archivedTask?p=0&c=1000');
+  const res = await doTheRequest('GET', `${url}/API/bpm/archivedTask?p=0&c=1000`);
   
-  return count(res.data);
+  return (res.data);
 }
+
 
 export const doTheRequest = async(method, url, body=null) => {
   if (method === 'PUT') {
     return fetch(url, {
-      method: method,
+      method,
       headers: {
-        'Cookie': bonitaCookie,
-        'X-Bonita-API-Token': bonitaToken,
+        //'Cookie': `JSESSIONID=${bonitaJSESSIONID}; X-Bonita-API-Token=${bonitaToken}`,
+        //'X-Bonita-API-Token': bonitaToken,
         'Content-type': 'application/json; charset=UTF-8'  
       },
-      body: body
-    }).then(res => {
-      return res;
-    })
+      body,
+      credentials: 'include'
+    });
   } else {
     return fetch(url, {
-      method: method,
+      method,
       headers: {
-        'Cookie': bonitaCookie,
-        'X-Bonita-API-Token': bonitaToken,
+        //'Cookie': `JSESSIONID=${bonitaJSESSIONID}; X-Bonita-API-Token=${bonitaToken}`,
+        //'X-Bonita-API-Token': bonitaToken,
       },
-      body: body
-    }).then(res => {
-      return res;
-    })
+      body,
+      credentials: 'include'
+    });
   }
 }
+
+
 
