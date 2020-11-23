@@ -13,7 +13,7 @@ const ProtocolManager = props => {
 
   const handleAddProtocol = () => {
     setNewProtocol({
-      name: '',
+      nombre: '',
       local: false,
       orden: protocolList.length + 1, 
     });
@@ -25,7 +25,7 @@ const ProtocolManager = props => {
   }
 
   const handleRemove = protocol => {
-  updateList(protocolList.filter(savedProtocol => !(savedProtocol.name === protocol.name && +savedProtocol.orden === +protocol.orden)));
+  updateList(protocolList.filter(savedProtocol => !(savedProtocol.nombre === protocol.nombre && +savedProtocol.orden === +protocol.orden)));
   }
 
   return <div>
@@ -33,11 +33,11 @@ const ProtocolManager = props => {
     {newProtocol ? (
       <Card variant="outlined">
         <CardContent>
-          <div className="fields-container">
+          <div classnombre="fields-container">
 
-            <TextField label="Nombre de Protocolo" value={newProtocol.name} onChange={({ target: { value } }) => setNewProtocol({
+            <TextField label="Nombre de Protocolo" value={newProtocol.nombre} onChange={({ target: { value } }) => setNewProtocol({
               ...newProtocol,
-              name: value
+              nombre: value
             })} />
             <TextField type="number" label="Orden" value={newProtocol.orden} onChange={({ target: { value } }) => setNewProtocol({
               ...newProtocol,
@@ -65,7 +65,7 @@ const ProtocolManager = props => {
     <h4>Lista de protocolos</h4>
     {protocolList.sort(sortProtocols).map(protocol => (
       <div key={protocol.orden}>
-        {protocol.name}
+        {protocol.nombre}
         <Chip label={protocol.orden} size="small" color="primary" />{
           protocol.local ? <Chip label={"Local"} size="small" color="primary"/> : null
         }

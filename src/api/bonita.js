@@ -20,15 +20,15 @@ export const signIn = async () => {
     },
     credentials: 'include',
   });
-  
-  return res;    
+
+  return res;
 };
 
 export const startProcess = async () => {
   const processId = await getProcessId('Testeo de medicamentos');
-    
+
   const res = await doTheRequest('POST', `${url}/API/bpm/process/${processId}/instantiation`);
-  const caseId = res.data.caseId;
+  const caseId = res.caseId;
 
   await updateProcessCaseVariable(caseId, 'caseId', 'java.lang.Integer', caseId);
 
@@ -36,26 +36,26 @@ export const startProcess = async () => {
 
 }
 
-export const getProcessId = async(processName) => {
-  const res = await doTheRequest('GET',`${url}/API/bpm/process?s=${processName}`);
+export const getProcessId = async (processName) => {
+  const res = await doTheRequest('GET', `${url}/API/bpm/process?s=${processName}`);
 
-  return res.data[0].id
+  return res[0].id
 }
 
 
-export const finishHumanTask = async(caseId) => {
-  const res = await doTheRequest('GET',`${url}/API/bpm/humanTask?f=rootCaseId=${caseId}`);
+export const finishHumanTask = async (caseId) => {
+  const res = await doTheRequest('GET', `${url}/API/bpm/humanTask?f=rootCaseId=${caseId}`);
 
-  const humanTaskId = res.data[0].id;
+  const humanTaskId = res[0].id;
 
-  await doTheRequest('PUT',`${url}/API/bpm/humanTask/${humanTaskId}`, {
+  await doTheRequest('PUT', `${url}/API/bpm/humanTask/${humanTaskId}`, JSON.stringify({
     //al body le tengo que hacer JSON.stringify()???
     "assigned_id": "1",
     "state": "completed"
-  }); 
+  }));
 }
 
-export const getProcessVariable = async(caseId, variableName) => {
+export const getProcessVariable = async (caseId, variableName) => {
   const res = await doTheRequest('GET', `${url}/API/bpm/caseVariable/${caseId}/${variableName}`);
   return {
     name: res.data.name,
@@ -65,61 +65,67 @@ export const getProcessVariable = async(caseId, variableName) => {
   }
 }
 
-export const updateProcessCaseVariable = async(caseId, variableName, javaTypeName, newValue) => {
-  await doTheRequest('PUT', `${url}/API/bpm/caseVariable/${caseId}/${variableName}`, {
-    //misma duda con JSON.stringify()???
-    "type": javaTypeName,
-    "value": newValue
-  });
-  
+export const projectStarting = async (caseId, protocolCount) => {
+  await updateProcessCaseVariable(caseId, 'protocolCount', 'java.lang.Integer', protocolCount);
+  await updateProcessCaseVariable(caseId, 'protocolNumber', 'java.lang.Integer', 1);
+  await finishHumanTask(caseId);
 }
 
-export const getAllProcess = async() => {
+export const updateProcessCaseVariable = async (caseId, variableName, javaTypeName, newValue) => {
+  await doTheRequest('PUT', `${url}/API/bpm/caseVariable/${caseId}/${variableName}`, JSON.stringify({
+    "type": javaTypeName,
+    "value": newValue
+  }));
+
+}
+
+export const getAllProcess = async () => {
   const res = await doTheRequest('GET', `${url}/API/bpm/process?p=0&c=1000`);
 
   return res.data;
 }
 
-export const getActiveCases = async() => {
+export const getActiveCases = async () => {
   const res = await doTheRequest('GET', `${url}/API/bpm/case?p=0&c=1000`);
 
   return res.data;
 }
 
-export const getArchivedCases = async() => {
+export const getArchivedCases = async () => {
   const res = await doTheRequest('GET', `${url}/API/bpm/archivedCase?p=0&c=1000`);
 
   return res.data;
 }
 
-export const getCountCases = async() => {
+export const getCountCases = async () => {
   const res = await doTheRequest('GET', `${url}/API/bpm/case?p=0&c=1000`);
 
   return (res.data.length);
 }
 
-export const getTasks = async() => {
+export const getTasks = async () => {
 
-  const res = await doTheRequest('GET', `${url}/API/bpm/humanTask?p=0&c=1000`);
-  
-  return res.json();
+  return doTheRequest('GET', `${url}/API/bpm/humanTask?p=0&c=1000`);
+
 }
 
-export const getArchivedTasks = async() => {
+export const getArchivedTasks = async () => {
   const res = await doTheRequest('GET', `${url}/API/bpm/archivedTask?p=0&c=1000`);
-  
+
   return (res.data);
 }
 
 
-export const doTheRequest = async(method, url, body=null) => {
+export const doTheRequest = async (method, url, body = null) => {
+  const bonitaToken = getCookie('X-Bonita-API-Token');
   if (method === 'PUT') {
     return fetch(url, {
       method,
       headers: {
         //'Cookie': `JSESSIONID=${bonitaJSESSIONID}; X-Bonita-API-Token=${bonitaToken}`,
-        //'X-Bonita-API-Token': bonitaToken,
-        'Content-type': 'application/json; charset=UTF-8'  
+        'X-Bonita-API-Token': bonitaToken,
+        'Content-type': 'application/json; charset=UTF-8',
+        // "Content-Type": "application/x-www-form-urlencoded",
       },
       body,
       credentials: 'include'
@@ -128,12 +134,13 @@ export const doTheRequest = async(method, url, body=null) => {
     return fetch(url, {
       method,
       headers: {
-        //'Cookie': `JSESSIONID=${bonitaJSESSIONID}; X-Bonita-API-Token=${bonitaToken}`,
-        //'X-Bonita-API-Token': bonitaToken,
+        // 'Cookie': `JSESSIONID=${bonitaJSESSIONID}; X-Bonita-API-Token=${bonitaToken}`,
+        'X-Bonita-API-Token': bonitaToken,
+        "Content-Type": "application/x-www-form-urlencoded",
       },
       body,
       credentials: 'include'
-    });
+    }).then(res => res.json());
   }
 }
 

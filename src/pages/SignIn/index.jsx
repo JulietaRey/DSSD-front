@@ -3,15 +3,26 @@ import { Button, Container, TextField } from '@material-ui/core';
 
 import './index.scss';
 import { signInCall } from '../../api/auth';
+import { useContext } from 'react';
+import { SessionContext } from '../../context/Session';
+import { useHistory } from 'react-router-dom';
 
 const SignIn = props => {
+  const { setUserId, userId } = useContext(SessionContext);
+  const history = useHistory();
+  if (userId) {
+    history.push('/');
+  }
   const [user, setUser] = useState('');
   const [password, setPassword] = useState('');
  
-  const handleSubmit = () => {
-    signInCall({
+  const handleSubmit = async () => {
+    const userId = await signInCall({
       username: user , password
-    })
+    });
+    if (userId) {
+      setUserId(userId);
+    }
   }
   return <Container>
     

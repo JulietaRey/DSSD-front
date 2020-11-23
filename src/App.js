@@ -8,18 +8,21 @@ import ProjectConfig from "./pages/ProjectConfig";
 
 import './App.scss';
 import SignIn from "./pages/SignIn";
+import { UseSession } from "./context/Session";
 
 function App() {
   return (
     <div className="root">
-      <Router>
-        <Switch>
-          <Route path="/project/config" component={ProjectConfig} />
-          <Route path="/signin" component={SignIn} />
-          <Route path="/" component={Home} />
+      <UseSession>
+        <Router>
+          <Switch>
+            <Route path="/project/config" component={ProjectConfig} />
+            <Route path="/signin" component={SignIn} />
+            <Route path="/" component={Home} />
 
-        </Switch>
-      </Router>
+          </Switch>
+        </Router>
+      </UseSession>
     </div>
 
 
