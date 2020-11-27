@@ -49,7 +49,7 @@ export const finishHumanTask = async (caseId) => {
   const humanTaskId = res[0].id;
 
   await doTheRequest('PUT', `${url}/API/bpm/humanTask/${humanTaskId}`, JSON.stringify({
-    //al body le tengo que hacer JSON.stringify()???
+    //al body le tengo que hacer JSON.stringify()??? SI <3 !
     "assigned_id": "1",
     "state": "completed"
   }));
@@ -58,10 +58,10 @@ export const finishHumanTask = async (caseId) => {
 export const getProcessVariable = async (caseId, variableName) => {
   const res = await doTheRequest('GET', `${url}/API/bpm/caseVariable/${caseId}/${variableName}`);
   return {
-    name: res.data.name,
-    value: res.data.value,
-    case_id: res.data.case_id,
-    type: res.data.type
+    name: res.name,
+    value: res.value,
+    case_id: res.case_id,
+    type: res.type
   }
 }
 
@@ -107,6 +107,12 @@ export const getTasks = async () => {
 
   return doTheRequest('GET', `${url}/API/bpm/humanTask?p=0&c=1000`);
 
+}
+
+export const getTasksForProjects = async (projects, rolId) => {
+  const cases = projects.map(project => project.caseId);
+  const tasks = await getTasks();
+  return tasks.filter(task => cases.includes(+task.caseId) && task.actorId == rolId );
 }
 
 export const getArchivedTasks = async () => {

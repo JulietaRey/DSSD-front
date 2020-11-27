@@ -17,6 +17,6 @@ export const signInCall = async (data) => {
   await signIn();
   // window.localStorage.setItem('bonitaToken', bonitaRes.bonitaToken);
   //window.localStorage.setItem('JSESSIONID', bonitaRes.JSESSIONID);
-  return datos.userId;
+  return {userId: datos.userId, rolId: datos.rolId};
 
 };

@@ -1,5 +1,14 @@
+import 'date-fns';
+import { format, formatDistance } from 'date-fns';
+import es from 'date-fns/locale/es';
+
 import React, { useState}  from 'react';
-import {  Button, Card, CardActions, CardContent, Chip, FormControl, FormControlLabel, IconButton,  Switch, TextField } from '@material-ui/core';
+import DateFnsUtils from '@date-io/date-fns';
+import {
+  MuiPickersUtilsProvider,
+  DatePicker,
+} from '@material-ui/pickers';
+import { Button, Card, CardActions, CardContent, Chip, FormControl, FormControlLabel, IconButton,  Switch, TextField } from '@material-ui/core';
 import { sortProtocols } from '../../helpers/protocolHelper';
 import DeleteIcon from '@material-ui/icons/Delete';
 
@@ -16,6 +25,8 @@ const ProtocolManager = props => {
       nombre: '',
       local: false,
       orden: protocolList.length + 1, 
+      startDate: new Date(),
+      endDate: null,
     });
   }
 
@@ -33,7 +44,7 @@ const ProtocolManager = props => {
     {newProtocol ? (
       <Card variant="outlined">
         <CardContent>
-          <div classnombre="fields-container">
+          <div className="fields-container">
 
             <TextField label="Nombre de Protocolo" value={newProtocol.nombre} onChange={({ target: { value } }) => setNewProtocol({
               ...newProtocol,
@@ -54,6 +65,42 @@ const ProtocolManager = props => {
               } label="Es local?"/>
               
             </FormControl>
+            <div>
+              <MuiPickersUtilsProvider utils={DateFnsUtils}>
+                <DatePicker
+                  disableToolbar
+                  variant="inline"
+                  format="dd/MM/yyyy"
+                  margin="normal"
+                  id="date-picker-inline"
+                  label="Fecha de Inicio"
+                  value={newProtocol.startDate}
+                  onChange={(value) => setNewProtocol({
+                    ...newProtocol,
+                    startDate: value,
+                  })}
+                  KeyboardButtonProps={{
+                    'aria-label': 'change date',
+                  }}
+                />
+                <DatePicker
+                  disableToolbar
+                  variant="inline"
+                  format="dd/MM/yyyy"
+                  margin="normal"
+                  id="date-picker-inline"
+                  label="Fecha de Fin"
+                  value={newProtocol.endDate}
+                  onChange={(value) => setNewProtocol({
+                    ...newProtocol,
+                    endDate: value,
+                  })}       
+                  KeyboardButtonProps={{
+                    'aria-label': 'change date',
+                  }}
+                />
+              </MuiPickersUtilsProvider>
+            </div>
           </div>
         </CardContent>
         <CardActions>
@@ -66,6 +113,10 @@ const ProtocolManager = props => {
     {protocolList.sort(sortProtocols).map(protocol => (
       <div key={protocol.orden}>
         {protocol.nombre}
+        <div>
+        {format(protocol.startDate, 'dd/MM/yyyy')} - {format(protocol.endDate, 'dd/MM/yyyy')} /
+    <b>{formatDistance(protocol.startDate, protocol.endDate, {locale: es})}</b>
+          </div>
         <Chip label={protocol.orden} size="small" color="primary" />{
           protocol.local ? <Chip label={"Local"} size="small" color="primary"/> : null
         }

@@ -17,11 +17,11 @@ const SignIn = props => {
   const [password, setPassword] = useState('');
  
   const handleSubmit = async () => {
-    const userId = await signInCall({
+    const data = await signInCall({
       username: user , password
     });
-    if (userId) {
-      setUserId(userId);
+    if (data.userId) {
+      setUserId(data.userId, data.rolId);
     }
   }
   return <Container>

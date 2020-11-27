@@ -3,6 +3,9 @@ import {
   Switch,
   Route,
 } from "react-router-dom";
+import { MuiPickersUtilsProvider } from '@material-ui/pickers';
+import DateFnsUtils from '@date-io/date-fns';
+
 import Home from "./pages/Home";
 import ProjectConfig from "./pages/ProjectConfig";
 
@@ -12,18 +15,20 @@ import { UseSession } from "./context/Session";
 
 function App() {
   return (
-    <div className="root">
-      <UseSession>
-        <Router>
-          <Switch>
-            <Route path="/project/config" component={ProjectConfig} />
-            <Route path="/signin" component={SignIn} />
-            <Route path="/" component={Home} />
+    <MuiPickersUtilsProvider utils={DateFnsUtils}>
+      <div className="root">
+        <UseSession>
+          <Router>
+            <Switch>
+              <Route path="/project/config" component={ProjectConfig} />
+              <Route path="/signin" component={SignIn} />
+              <Route path="/" component={Home} />
 
-          </Switch>
-        </Router>
-      </UseSession>
-    </div>
+            </Switch>
+          </Router>
+        </UseSession>
+      </div>
+    </MuiPickersUtilsProvider>
 
 
   );
