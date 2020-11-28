@@ -1,17 +1,23 @@
 import React, { useContext, useEffect, useState } from 'react';
-import { Button } from '@material-ui/core';
+import { Button, Card, CardContent, CardHeader, Chip, Dialog, Grid, Paper, TextField, Typography } from '@material-ui/core';
 import { format, parseISO } from 'date-fns';
-import { Link, useHistory } from 'react-router-dom';
+import { useHistory } from 'react-router-dom';
 import { getProjects, lanzamientoDeProtocolo } from '../../api/project';
-import { getTasksForProjects } from '../../api/bonita';
-import {ADMIN_ROL} from '../../common/constants';
+import { getTasksForProjects, getTasksForProtocols } from '../../api/bonita';
+import { getProtocolList, saveProtocolResult } from '../../api/protocol'; 
+import {ADMIN_ROL, USER_ROL} from '../../common/constants';
 import { SessionContext } from '../../context/Session';
 
 const Home = () => {
-  const [projects, setProjects] = useState([]);
-  const [projectTasks, setProjectTasks ] = useState([]);
+  const [ projects, setProjects ] = useState([]);
+  const [ projectTasks, setProjectTasks ] = useState([]);
+  const [ protocols, setProtocols] = useState([]);
+  const [ showModal, setShowModal ] = useState(false);
+  const [ selectedProtocol, setSelectedProtocol] = useState(null);
+  const [protocolResult, setProtocolResult] = useState(0);
+
   let history = useHistory();
-  const {userId,  clearUser, rolId } = useContext(SessionContext);
+  const {userId , rolId } = useContext(SessionContext);
 
   const loadTasks = async() => {
     if (!userId) {
@@ -22,8 +28,13 @@ const Home = () => {
       const projectList = await getProjects(userId);
       setProjects(projectList);
       const taskList = await getTasksForProjects(projectList, ADMIN_ROL);
-      console.log("🚀 ~ file: index.jsx ~ line 25 ~ loadTasks ~ taskList", taskList)
       setProjectTasks(taskList);
+    } else {
+      const protocolList = await getProtocolList(userId);
+      setProtocols(protocolList);
+      const taskList = await getTasksForProtocols(protocolList, USER_ROL);
+      setProjectTasks(taskList);
+
     }
     
   }
@@ -33,12 +44,11 @@ const Home = () => {
     history.push('/project/config')
   }
 
-  const logout = () => {
-    clearUser();
-  }
+
 
   const handleAction = async (project, task) => {
     await lanzamientoDeProtocolo(project, task);
+    history.push('/');
   }
 
   const renderAction = projectItem => {
@@ -50,33 +60,121 @@ const Home = () => {
     return <Button onClick={()=>handleAction(projectItem, task)} variant="contained" color="secondary">{task.displayName}</Button>;
   }
 
-  return <div>
-    home
-     <Button variant="contained" color="primary" onClick={goToProjectConfig}>Agregar Proyecto</Button>
-     <Link to="signin"> Ingresar </Link>
-     <Button onClick={logout}>Logout</Button>
+  const handleProtocolAction = async () => {
+    await saveProtocolResult(selectedProtocol, protocolResult, userId);
+    setSelectedProtocol(null);
+    setShowModal(false);
+    history.push('/');
+  }
 
-     <hr/>
+  const renderProtocolAction = protocolItem => {
+    const task = projectTasks.find(projectTask => 
+        projectTask.caseId == protocolItem.project.caseId 
+        && protocolItem.estado === 'listo');
+    if (!task) {
+      return null;
+    }
+    return <Button onClick={()=>{setSelectedProtocol(protocolItem); setShowModal(true)}} variant="contained" color="secondary">
+      {task.displayName}
+    </Button>
+  }
 
-    <div>
-      {projects.length  ? <>
-         <h2>Proyectos</h2>
-         <div>
+  if (!userId) {
+    return <Paper style={{
+      padding: '50px',
+      maxWidth: '600px'
+    }}>
+      <Typography variant="h5">
+          Inicie sesión para gestionar el sistema
+      </Typography>
+    </Paper>
+  }
+
+  return <Grid container justify="center">
+
+    <Grid item xs={11}>
+      {rolId == ADMIN_ROL  ? <> <Grid container 
+        justify="space-between"
+        alignItems="center"
+        >
+          <Grid item sm={8} md={10} >
+            <Typography variant="h2">
+              Proyectos
+            </Typography>
+          </Grid>
+          <Grid item>
+            <Button variant="contained" color="primary" onClick={goToProjectConfig}>Agregar Proyecto</Button>
+          </Grid>
+      </Grid>
+         <Grid container spacing={2} style={{padding: '10px 0'}}>
            {
              projects.map(projectItem => (
-               <div key={projectItem.id}>
-                {projectItem.nombre}
-                <br></br>
-                {format(parseISO(projectItem.fecha_inicio), 'dd/MM/yyyy')} - {format(parseISO(projectItem.fecha_fin), 'dd/MM/yyyy') }
-                <br></br>
-                {renderAction(projectItem)}
-                </div>
+               <Grid xs={12} md={6} lg={4} item key={projectItem.id}>
+                 <Card variant="outlined">
+                    <CardHeader title={projectItem.nombre} />
+                   <CardContent>
+                      {format(parseISO(projectItem.fecha_inicio), 'dd/MM/yyyy')} - {format(parseISO(projectItem.fecha_fin), 'dd/MM/yyyy') }
+                      <br></br>
+                      {renderAction(projectItem)}
+                   </CardContent>
+                 </Card>
+                </Grid>
              ))
            }
-         </div>
+         </Grid>
       </>  : null}
-    </div>
-  </div>
+      {rolId == USER_ROL  ? <> <Grid container 
+        justify="space-between"
+        alignItems="center"
+        >
+          <Grid item sm={8}>
+            <Typography variant="h2">
+              Protocolos
+            </Typography>
+          </Grid>
+      </Grid>
+         <Grid container spacing={2} style={{padding: '10px 0'}}>
+           {
+             protocols.map(protocolItem => (
+               <Grid xs={12} md={6} lg={4} item key={protocolItem.id}>
+                 <Card variant="outlined">
+                    <CardHeader title={<>
+                    {protocolItem.nombre}
+                    {protocolItem.owner === null ? <Chip size="small" color="secondary" label="Sin Asignar" /> : null}
+
+                    </>} />
+                   <CardContent>
+                      {format(parseISO(protocolItem.fecha_inicio), 'dd/MM/yyyy')} - {format(parseISO(protocolItem.fecha_fin), 'dd/MM/yyyy') }
+                      <br></br>
+                      {renderProtocolAction(protocolItem)}
+                   </CardContent>
+                 </Card>
+                </Grid>
+             ))
+           }
+         </Grid>
+      </>  : null}
+    </Grid>
+    <Dialog  open={showModal}>
+      <Grid style={{ 
+      padding: '50px'
+     }} container justify="center">
+           <Grid item>
+            <Typography variant="h5">
+              Ingrese el resultado del protocolo
+            </Typography>
+           </Grid>
+           <Grid item>
+             <TextField label="Resultado" type="number" value={protocolResult} onChange={({target: { value }})=> setProtocolResult(value)} />
+           </Grid>
+          <Grid item style={{ margin: '10px 0'}}>
+            <Button onClick={()=>{setShowModal(false); setSelectedProtocol(null)}} variant="text">Cancelar</Button>
+            <Button onClick={()=>handleProtocolAction()} variant="contained" color="primary">Guardar</Button>
+          </Grid>
+      </Grid>
+      
+    </Dialog>
+  </Grid>
 };
 
 export default Home;

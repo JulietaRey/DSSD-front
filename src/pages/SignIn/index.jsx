@@ -32,7 +32,11 @@ const SignIn = props => {
         onChange={({target: {value}})=> setPassword(value)}
         value={password} />
 
-      <Button onClick={handleSubmit}>Ingresar</Button>
+      <Button 
+        style={{ marginTop: '10px' }}
+        variant="contained"
+        color="secondary"
+        onClick={handleSubmit}>Ingresar</Button>
     </div>
   </Container>
 };

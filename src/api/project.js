@@ -1,4 +1,5 @@
 import { finishHumanTask, getProcessVariable, projectStarting, startProcess, updateProcessCaseVariable } from "./bonita";
+import { setProtocolReady } from './protocol';
 import { getApiKey, url } from "./url";
 
 const createProject = async (data, caseId) => {
@@ -19,7 +20,7 @@ export const saveProject = async (data) => {
     const caseId = await startProcess();
     const success = await createProject(data, caseId);
     if (success) {
-      await projectStarting(caseId, data.protocolList.length);
+      await projectStarting(caseId, data.protocolList.length + 1);
       return true;
     }
     return false;
@@ -67,4 +68,7 @@ export const lanzamientoDeProtocolo = async (project, task) => {
   const protocol = await getProtocol(project.id, protocolNumber.value);
   await updateProcessCaseVariable(project.caseId, 'isLocal', 'java.lang.Boolean', protocol.local.toString());  
   await finishHumanTask(project.caseId);
+  await setProtocolReady(protocol.id);
+  await updateProcessCaseVariable(project.caseId, 'cancelProject', 'java.lang.Boolean', false);  
+  await updateProcessCaseVariable(project.caseId, 'resetProtocol', 'java.lang.Boolean', false);  
 }

@@ -1,7 +1,7 @@
 import 'date-fns';
 
 import React, { useState,useContext } from 'react';
-import { Button, Container, TextField } from '@material-ui/core'; 
+import { Button, Container, Grid, TextField, Typography } from '@material-ui/core'; 
 import { useHistory } from 'react-router-dom';
 import DateFnsUtils from '@date-io/date-fns';
 import {
@@ -43,47 +43,59 @@ const ProjectConfig = props => {
   }
   return (<div>
     <Container>
-      <h2>Configurar Proyecto</h2>
-      <div className="form-container">
-        <div>
-          <TextField fullWidth label={'Nombre de Proyecto'} value={projectName} onChange={({target: { value }})=> setProjectName(value)} />
-        </div>
-        <div>
-        <MuiPickersUtilsProvider utils={DateFnsUtils}>
-          <DatePicker
-            disableToolbar
-            variant="inline"
-            format="dd/MM/yyyy"
-            margin="normal"
-            id="date-picker-inline"
-            label="Fecha de Inicio"
-            value={startDate}
-            onChange={setStartDate}
-            KeyboardButtonProps={{
-              'aria-label': 'change date',
-            }}
-          />
-           <DatePicker
-            disableToolbar
-            variant="inline"
-            format="dd/MM/yyyy"
-            margin="normal"
-            id="date-picker-inline"
-            label="Fecha de Fin"
-            value={endDate}
-            onChange={setEndDate}
-            KeyboardButtonProps={{
-              'aria-label': 'change date',
-            }}
-          />
-        </MuiPickersUtilsProvider>
-        </div>
-      </div>
-      <ProtocolManager protocolList={protocolList} updateList={setProtocolList} />
-      <hr />
+      <Typography variant="h3">
+        Configurar Proyecto
+      </Typography>
+      <Grid container >
+        <Grid item xs={8}>
+          <div className="form-container">
+            <div>
+              <TextField fullWidth label={'Nombre de Proyecto'} value={projectName} onChange={({target: { value }})=> setProjectName(value)} />
+            </div>
+            <div>
+            <MuiPickersUtilsProvider utils={DateFnsUtils}>
+              <DatePicker
+                disableToolbar
+                variant="inline"
+                format="dd/MM/yyyy"
+                margin="normal"
+                id="date-picker-inline"
+                label="Fecha de Inicio"
+                value={startDate}
+                onChange={setStartDate}
+                KeyboardButtonProps={{
+                  'aria-label': 'change date',
+                }}
+              />
+              <DatePicker
+                disableToolbar
+                variant="inline"
+                format="dd/MM/yyyy"
+                margin="normal"
+                id="date-picker-inline"
+                label="Fecha de Fin"
+                value={endDate}
+                onChange={setEndDate}
+                KeyboardButtonProps={{
+                  'aria-label': 'change date',
+                }}
+              />
+            </MuiPickersUtilsProvider>
+            </div>
+          </div>
+        </Grid>
+        <Grid item xs={8}>
+
+        <ProtocolManager protocolList={protocolList} updateList={setProtocolList} />
+        </Grid>
+
+      <Grid item xs={8}>
 
       <Button variant="text" onClick={()=>history.push('/')}> Cancelar </Button>
       <Button variant="contained" color="primary" onClick={handleSubmit}> Guardar Proyecto </Button>
+      </Grid>
+      </Grid>
+
     </Container>
   </div>)
 

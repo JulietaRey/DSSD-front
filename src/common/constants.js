@@ -1,2 +1,2 @@
-export const ADMIN_ROL = 201;
-export const USER_ROL = 204;
+export const ADMIN_ROL = 302;
+export const USER_ROL = 304;

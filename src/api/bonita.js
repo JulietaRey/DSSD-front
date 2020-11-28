@@ -115,6 +115,12 @@ export const getTasksForProjects = async (projects, rolId) => {
   return tasks.filter(task => cases.includes(+task.caseId) && task.actorId == rolId );
 }
 
+export const getTasksForProtocols = async (protocols, rolId) => {
+  const cases = protocols.map(protocol => protocol.project.caseId);
+  const tasks = await getTasks();
+  return tasks.filter(task => cases.includes(+task.caseId) && task.actorId == rolId );
+}
+
 export const getArchivedTasks = async () => {
   const res = await doTheRequest('GET', `${url}/API/bpm/archivedTask?p=0&c=1000`);
 

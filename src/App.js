@@ -12,23 +12,49 @@ import ProjectConfig from "./pages/ProjectConfig";
 import './App.scss';
 import SignIn from "./pages/SignIn";
 import { UseSession } from "./context/Session";
+import Header from "./components/Header";
+import { Container, createMuiTheme, ThemeProvider } from "@material-ui/core";
+
+const theme = createMuiTheme({
+  typography: {
+    fontFamily: 'Poppins',
+  },
+  palette: {
+    primary: {
+      main: '#ec407a',
+    },
+    secondary: {
+      main: '#00838f',
+    },
+  },
+});
 
 function App() {
   return (
-    <MuiPickersUtilsProvider utils={DateFnsUtils}>
-      <div className="root">
-        <UseSession>
-          <Router>
-            <Switch>
-              <Route path="/project/config" component={ProjectConfig} />
-              <Route path="/signin" component={SignIn} />
-              <Route path="/" component={Home} />
+    <ThemeProvider theme={theme}>
+      <MuiPickersUtilsProvider utils={DateFnsUtils}>
+        <div className="root">
+          <UseSession>
+            <Router>
+            <Header />
+            <Container style={{
+              marginTop: '80px',
+              display: 'flex',
+              justifyContent: 'center'
+            }}>
 
-            </Switch>
-          </Router>
-        </UseSession>
-      </div>
-    </MuiPickersUtilsProvider>
+              <Switch>
+                <Route path="/project/config" component={ProjectConfig} />
+                <Route path="/signin" component={SignIn} />
+                <Route path="/" component={Home} />
+
+              </Switch>
+            </Container>
+            </Router>
+          </UseSession>
+        </div>
+      </MuiPickersUtilsProvider>
+    </ThemeProvider>
 
 
   );
