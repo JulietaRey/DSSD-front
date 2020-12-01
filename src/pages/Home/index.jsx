@@ -2,11 +2,12 @@ import React, { useContext, useEffect, useState } from 'react';
 import { Button, Card, CardContent, CardHeader, Chip, Dialog, Grid, Paper, TextField, Typography } from '@material-ui/core';
 import { format, parseISO } from 'date-fns';
 import { useHistory } from 'react-router-dom';
-import { getProjects, lanzamientoDeProtocolo } from '../../api/project';
+import { getProjects, lanzamientoDeProtocolo, makeDecision } from '../../api/project';
 import { getTasksForProjects, getTasksForProtocols } from '../../api/bonita';
-import { getProtocolList, saveProtocolResult } from '../../api/protocol'; 
+import { getProtocolList, getProtocolResult, saveProtocolResult } from '../../api/protocol'; 
 import {ADMIN_ROL, USER_ROL} from '../../common/constants';
 import { SessionContext } from '../../context/Session';
+import Notifications from '../../components/Notifications';
 
 const Home = () => {
   const [ projects, setProjects ] = useState([]);
@@ -14,10 +15,16 @@ const Home = () => {
   const [ protocols, setProtocols] = useState([]);
   const [ showModal, setShowModal ] = useState(false);
   const [ selectedProtocol, setSelectedProtocol] = useState(null);
-  const [protocolResult, setProtocolResult] = useState(0);
+  const [ protocolResult, setProtocolResult] = useState(0);
+  const [ showFailModal, setShowFailModal ] = useState(false);
 
   let history = useHistory();
   const {userId , rolId } = useContext(SessionContext);
+
+  const refreshProjects = async () => {
+    const projectList = await getProjects(userId);
+    setProjects(projectList);
+  }
 
   const loadTasks = async() => {
     if (!userId) {
@@ -47,8 +54,27 @@ const Home = () => {
 
 
   const handleAction = async (project, task) => {
-    await lanzamientoDeProtocolo(project, task);
-    history.push('/');
+    switch (task.displayName) {
+      case 'Toma de decisión por falla':
+        const res = await getProtocolResult(project.caseId);
+        setProtocolResult(res); 
+        setSelectedProtocol(project);
+        setShowFailModal(true);
+        break;
+      case 'Lanzamiento de protocolo':
+        await lanzamientoDeProtocolo(project, task);
+        history.push('/');
+        break;
+      default:
+        console.error('Acción no soportada');
+        break;
+    }
+  }
+
+  const handleFail =  async (params) => {
+    await makeDecision(selectedProtocol.caseId, params);
+    setSelectedProtocol(null);
+    setShowFailModal(false);
   }
 
   const renderAction = projectItem => {
@@ -91,7 +117,9 @@ const Home = () => {
   }
 
   return <Grid container justify="center">
-
+    <Grid item xs={12}>
+        <Notifications projects={projects} updateProjectList={refreshProjects} />
+    </Grid>
     <Grid item xs={11}>
       {rolId == ADMIN_ROL  ? <> <Grid container 
         justify="space-between"
@@ -173,6 +201,41 @@ const Home = () => {
           </Grid>
       </Grid>
       
+    </Dialog>
+    <Dialog open={showFailModal}>
+    <Grid style={{ 
+      padding: '50px'
+     }} container justify="center">
+       <Grid item>
+            <Typography variant="h5">
+              Toma decisión por falla
+            </Typography>
+            <Typography variant="body1">
+              El último resultado del protocolo fue: {protocolResult}
+            </Typography>
+           </Grid>
+          <Grid container direction="column" spacing={1} item style={{ margin: '10px 0'}}>
+            <Grid item>
+              <Button style={{
+                background: '#1f98d2',
+              }} fullWidth onClick={()=> handleFail({ resetProtocol: true })} variant="contained" color="primary">Repetir Protocolo</Button>
+            </Grid>
+            <Grid item>
+              <Button fullWidth onClick={()=> handleFail({})} variant="contained" color="secondary">Continuar de todas formas</Button>
+            </Grid>
+            <Grid item>
+              <Button fullWidth onClick={()=> handleFail({
+                cancelProject: true
+              })} variant="contained" style={{ 
+                background: '#c11010',
+                color: 'white'
+              }}>Cancelar Proyecto</Button>
+            </Grid>
+            <Grid item>
+              <Button fullWidth onClick={()=>{setShowFailModal(false); setSelectedProtocol(null)}} variant="outlined">Decidir más tarde</Button>
+            </Grid>
+          </Grid>
+       </Grid>
     </Dialog>
   </Grid>
 };

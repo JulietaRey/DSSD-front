@@ -66,9 +66,36 @@ const getProtocol = async (projectId, order) => {
 export const lanzamientoDeProtocolo = async (project, task) => {
   const protocolNumber = await getProcessVariable(project.caseId, 'protocolNumber');
   const protocol = await getProtocol(project.id, protocolNumber.value);
-  await updateProcessCaseVariable(project.caseId, 'isLocal', 'java.lang.Boolean', protocol.local.toString());  
+  await updateProcessCaseVariable(project.caseId, 'isLocal', 'java.lang.Boolean', protocol.local.toString());
   await finishHumanTask(project.caseId);
   await setProtocolReady(protocol.id);
-  await updateProcessCaseVariable(project.caseId, 'cancelProject', 'java.lang.Boolean', false);  
-  await updateProcessCaseVariable(project.caseId, 'resetProtocol', 'java.lang.Boolean', false);  
+  await updateProcessCaseVariable(project.caseId, 'cancelProject', 'java.lang.Boolean', false);
+  await updateProcessCaseVariable(project.caseId, 'resetProtocol', 'java.lang.Boolean', false);
+}
+
+export const makeDecision = async (caseId, params) => {
+  if (params.cancelProject) {
+    await updateProcessCaseVariable(caseId, 'cancelProject', 'java.lang.Boolean', true);
+    await fetch(`${url}/project/${caseId}/cancel`, {
+      method: 'PUT', headers: {
+        'Content-type': 'application/json; charset=UTF-8',
+        Authorization: `Bearer ${getApiKey()}`,
+      }
+    })
+  }
+  if (params.resetProtocol) {
+    await updateProcessCaseVariable(caseId, 'resetProtocol', 'java.lang.Boolean', true);
+    const protocolNumber = await getProcessVariable(caseId, 'protocolNumber');
+    await updateProcessCaseVariable(caseId, 'protocolNumber', 'java.lang.Integer', `${+protocolNumber.value - 1}`);
+  }
+
+  await finishHumanTask(caseId);
+}
+export const projectSeen = async projectId => {
+  return fetch(`${url}/project/${projectId}/seen`, {
+    method: 'PUT', headers: {
+      'Content-type': 'application/json; charset=UTF-8',
+      Authorization: `Bearer ${getApiKey()}`,
+    }
+  });
 }

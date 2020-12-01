@@ -2,21 +2,44 @@ import 'date-fns';
 import { format, formatDistance } from 'date-fns';
 import es from 'date-fns/locale/es';
 
-import React, { useState}  from 'react';
+import React, { useEffect, useState}  from 'react';
 import DateFnsUtils from '@date-io/date-fns';
 import {
   MuiPickersUtilsProvider,
   DatePicker,
 } from '@material-ui/pickers';
-import { Button, Card, CardActions, CardContent, Chip, FormControl, FormControlLabel, IconButton,  Switch, TextField } from '@material-ui/core';
+import { Button, 
+  Card, 
+  CardActions, 
+  CardContent, 
+  Chip, 
+  FormControl, 
+  FormControlLabel, 
+  IconButton,  
+  InputLabel,  
+  MenuItem,  
+  Select,  
+  Switch, 
+  TextField } from '@material-ui/core';
 import { sortProtocols } from '../../helpers/protocolHelper';
 import DeleteIcon from '@material-ui/icons/Delete';
 
 
 import './index.scss'
+import { getUserList } from '../../api/protocol';
 
 const ProtocolManager = props => {
   const [newProtocol, setNewProtocol] = useState();
+  const [users, setUsers] = useState([]);
+
+  const loadUsers = async () => {
+    const res = await getUserList();
+    setUsers(res);
+  };
+
+  useEffect(()=>{
+    loadUsers();
+  }, []);
 
   const { protocolList, updateList } = props;
 
@@ -27,6 +50,7 @@ const ProtocolManager = props => {
       orden: protocolList.length + 1, 
       startDate: new Date(),
       endDate: null,
+      owner: null,
     });
   }
 
@@ -54,6 +78,17 @@ const ProtocolManager = props => {
               ...newProtocol,
               orden: value
             })} /> 
+            <FormControl>
+              <InputLabel>Responsable de protocolo</InputLabel>
+              <Select value={newProtocol.owner} onChange={({target:{value}})=> setNewProtocol({
+                ...newProtocol,
+                owner: value,
+              })}>
+                {users.map(user=> (
+                  <MenuItem key={user.id} value={user.id}>{user.firstName} {user.lastName}</MenuItem>
+                ))}
+              </Select>
+            </FormControl>
             <FormControl>
               <FormControlLabel control={
                 <Switch checked={newProtocol.local} onChange={
@@ -105,7 +140,7 @@ const ProtocolManager = props => {
         </CardContent>
         <CardActions>
           <Button onClick={()=>setNewProtocol()} variant="text">Cancelar</Button>
-          <Button onClick={saveProtocol} variant="contained">Guardar</Button>
+          <Button disabled={!newProtocol.endDate} onClick={saveProtocol} variant="contained">Guardar</Button>
         </CardActions>
       </Card>
     ) : null}
