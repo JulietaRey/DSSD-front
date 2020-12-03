@@ -11,9 +11,11 @@ import ProjectConfig from "./pages/ProjectConfig";
 
 import './App.scss';
 import SignIn from "./pages/SignIn";
+import SignUp from "./pages/SignUp";
 import { UseSession } from "./context/Session";
 import Header from "./components/Header";
 import { Container, createMuiTheme, ThemeProvider } from "@material-ui/core";
+import Monitor from "./pages/Monitor";
 
 const theme = createMuiTheme({
   typography: {
@@ -46,7 +48,9 @@ function App() {
               <Switch>
                 <Route path="/project/config" component={ProjectConfig} />
                 <Route path="/signin" component={SignIn} />
-                <Route path="/" component={Home} />
+                <Route path="/signup" component={SignUp} />
+                <Route path="/monitoreo" component={Monitor} />
+                <Route exact path="/" component={Home} />
 
               </Switch>
             </Container>

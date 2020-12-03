@@ -76,6 +76,18 @@ export const getUserList = async () => {
     const users =  await res.json();
     return users;
   } catch(e) {
-
+    console.error(e);
   }
+}
+
+export const getMembersWithProtocols = async () => {
+  const res = await fetch(`${url}/protocol/members`, {
+    method: 'GET',
+    headers: {
+      'Content-type': 'application/json; charset=UTF-8',
+      Authorization: `Bearer ${getApiKey()}`,
+    },
+  });
+  const members =  await res.json();
+  return members;
 }

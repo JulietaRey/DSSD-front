@@ -21,6 +21,11 @@ const SignIn = props => {
       username: user , password
     });
     if (data.userId) {
+      if (data.rolId !== 0) {
+        history.push('/');
+      } else {
+        history.push('/monitoreo');
+      }
       setUserId(data.userId, data.rolId);
     }
   }

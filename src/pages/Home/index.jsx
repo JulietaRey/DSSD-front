@@ -1,13 +1,28 @@
 import React, { useContext, useEffect, useState } from 'react';
-import { Button, Card, CardContent, CardHeader, Chip, Dialog, Grid, Paper, TextField, Typography } from '@material-ui/core';
+import { Avatar, Button, Card, CardContent, CardHeader, Chip, Dialog, Grid, Paper, Tab, Tabs, TextField, Typography } from '@material-ui/core';
 import { format, parseISO } from 'date-fns';
 import { useHistory } from 'react-router-dom';
-import { getProjects, lanzamientoDeProtocolo, makeDecision } from '../../api/project';
+import { getProjects, makeDecision } from '../../api/project';
 import { getTasksForProjects, getTasksForProtocols } from '../../api/bonita';
-import { getProtocolList, getProtocolResult, saveProtocolResult } from '../../api/protocol'; 
+import { getProtocolList, saveProtocolResult } from '../../api/protocol'; 
 import {ADMIN_ROL, USER_ROL} from '../../common/constants';
 import { SessionContext } from '../../context/Session';
 import Notifications from '../../components/Notifications';
+import Project from '../../components/Project';
+
+const colors = [
+  '#d60000',
+  '#d64500',
+  '#d68000',
+  '#d6b100',
+  '#bfd600',
+  '#00d6c2',
+  '#009bd6',
+  '#7a00d6',
+  '#bf00d6',
+  '#0060d6',
+  '#00d606',
+]
 
 const Home = () => {
   const [ projects, setProjects ] = useState([]);
@@ -17,6 +32,7 @@ const Home = () => {
   const [ selectedProtocol, setSelectedProtocol] = useState(null);
   const [ protocolResult, setProtocolResult] = useState(0);
   const [ showFailModal, setShowFailModal ] = useState(false);
+  const [ activeTab, setActiveTab ] = useState(0);
 
   let history = useHistory();
   const {userId , rolId } = useContext(SessionContext);
@@ -26,7 +42,7 @@ const Home = () => {
     setProjects(projectList);
   }
 
-  const loadTasks = async() => {
+  const loadTasks = async () => {
     if (!userId) {
       return null;
     }
@@ -41,34 +57,12 @@ const Home = () => {
       setProtocols(protocolList);
       const taskList = await getTasksForProtocols(protocolList, USER_ROL);
       setProjectTasks(taskList);
-
-    }
-    
+    }    
   }
-  
-  useEffect(() => {loadTasks()}, []);
+  useEffect(() => {loadTasks()}, [userId, rolId]);
+
   const goToProjectConfig = () => {
     history.push('/project/config')
-  }
-
-
-
-  const handleAction = async (project, task) => {
-    switch (task.displayName) {
-      case 'Toma de decisión por falla':
-        const res = await getProtocolResult(project.caseId);
-        setProtocolResult(res); 
-        setSelectedProtocol(project);
-        setShowFailModal(true);
-        break;
-      case 'Lanzamiento de protocolo':
-        await lanzamientoDeProtocolo(project, task);
-        history.push('/');
-        break;
-      default:
-        console.error('Acción no soportada');
-        break;
-    }
   }
 
   const handleFail =  async (params) => {
@@ -77,21 +71,17 @@ const Home = () => {
     setShowFailModal(false);
   }
 
-  const renderAction = projectItem => {
-    const task = projectTasks.find(projectTask => projectTask.caseId == projectItem.caseId);
-    if (!task ) {
-      return null;
-    }
-     
-    return <Button onClick={()=>handleAction(projectItem, task)} variant="contained" color="secondary">{task.displayName}</Button>;
-  }
-
   const handleProtocolAction = async () => {
     await saveProtocolResult(selectedProtocol, protocolResult, userId);
     setSelectedProtocol(null);
     setShowModal(false);
     history.push('/');
   }
+
+  const actionsAfterFailure = (res, project) =>{ 
+    setProtocolResult(res); 
+    setSelectedProtocol(project);
+    setShowFailModal(true);}
 
   const renderProtocolAction = protocolItem => {
     const task = projectTasks.find(projectTask => 
@@ -116,6 +106,30 @@ const Home = () => {
     </Paper>
   }
 
+  const filteredProjects = () => {
+    if (activeTab === 0) {
+      return projects.filter(project => project.result === null);
+    }
+    return projects.filter(project => project.result !== null);
+  }
+
+  const filteredProtocols = () => {
+    switch (activeTab) {
+      case 0:
+        return protocols.filter(protocol => projectTasks.some(projectTask => 
+          projectTask.caseId == protocol.project.caseId)
+          && protocol.estado === 'listo');
+      case 1:
+        return protocols.filter(protocol => protocol.ejecuciones === 0)
+      case 2: 
+        return protocols.filter(protocol => protocol.estado === 'finalizado')
+      case 3: 
+      default:
+        return protocols;
+
+    }
+  }
+
   return <Grid container justify="center">
     <Grid item xs={12}>
         <Notifications projects={projects} updateProjectList={refreshProjects} />
@@ -134,20 +148,18 @@ const Home = () => {
             <Button variant="contained" color="primary" onClick={goToProjectConfig}>Agregar Proyecto</Button>
           </Grid>
       </Grid>
+      <Tabs value={activeTab} onChange={(e, value)=>setActiveTab(value)} >
+        <Tab value={0} label="Activos"/>
+        <Tab value={1} label="Archivados"/>
+      </Tabs>
          <Grid container spacing={2} style={{padding: '10px 0'}}>
            {
-             projects.map(projectItem => (
-               <Grid xs={12} md={6} lg={4} item key={projectItem.id}>
-                 <Card variant="outlined">
-                    <CardHeader title={projectItem.nombre} />
-                   <CardContent>
-                      {format(parseISO(projectItem.fecha_inicio), 'dd/MM/yyyy')} - {format(parseISO(projectItem.fecha_fin), 'dd/MM/yyyy') }
-                      <br></br>
-                      {renderAction(projectItem)}
-                   </CardContent>
-                 </Card>
-                </Grid>
-             ))
+             filteredProjects().map(projectItem => <Project 
+              key={projectItem.id}
+              actionsAfterFailure={actionsAfterFailure} 
+              project={projectItem} 
+              projectTasks={projectTasks}
+              />)
            }
          </Grid>
       </>  : null}
@@ -161,25 +173,63 @@ const Home = () => {
             </Typography>
           </Grid>
       </Grid>
+      <Tabs value={activeTab} onChange={(e, value)=>setActiveTab(value)} >
+        <Tab value={0} label="Activos"/>
+        <Tab value={1} label="Próximos"/>
+        <Tab value={2} label="Terminados"/>
+        <Tab value={3} label="Todos"/>
+      </Tabs>
          <Grid container spacing={2} style={{padding: '10px 0'}}>
-           {
-             protocols.map(protocolItem => (
+           {filteredProtocols().length ?
+             filteredProtocols().map(protocolItem => (
                <Grid xs={12} md={6} lg={4} item key={protocolItem.id}>
                  <Card variant="outlined">
-                    <CardHeader title={<>
+                    <CardHeader 
+                      avatar={
+                        protocolItem.puntaje !== null ? 
+                      <Avatar style={{
+                        backgroundColor: colors[protocolItem.puntaje]
+                      }} >{protocolItem.puntaje}</Avatar> : null
+                      }
+                    title={<>
                     {protocolItem.nombre}
                     {protocolItem.owner === null ? <Chip size="small" color="secondary" label="Sin Asignar" /> : null}
-
-                    </>} />
+                    
+                    </>} subheader={protocolItem.project.nombre} />
                    <CardContent>
-                      {format(parseISO(protocolItem.fecha_inicio), 'dd/MM/yyyy')} - {format(parseISO(protocolItem.fecha_fin), 'dd/MM/yyyy') }
-                      <br></br>
+                     <Grid container>
+                     <Grid item xs={6}>
+                        <Typography variant="overline"><b>Fecha inicio</b>: {format(parseISO(protocolItem.fecha_inicio), 'dd/MM/yyyy')}</Typography>
+                      </Grid>
+                      <Grid item xs={6}>
+                        <Typography variant="overline"><b>Fecha fin</b>: {format(parseISO(protocolItem.fecha_fin), 'dd/MM/yyyy')}</Typography>
+                      </Grid>
+                      <Grid item xs={6}>
+                        <Typography variant="overline">Numero de orden: {protocolItem.orden}</Typography>
+                    </Grid> 
+                    <Grid item xs={6}>
+                      {
+                        protocolItem.estado ? 
+                        <Chip style={{
+                          textTransform: 'capitalize'
+                        }} color="primary" label={protocolItem.estado} />
+                       : null}
+                    </Grid>
+                    
+                     </Grid>
                       {renderProtocolAction(protocolItem)}
                    </CardContent>
                  </Card>
                 </Grid>
              ))
-           }
+           : <Paper style={{
+            padding: '50px',
+            maxWidth: '600px'
+          }}>
+            <Typography variant="h5">
+                No hay protocolos bajo este filtro
+            </Typography>
+          </Paper> }
          </Grid>
       </>  : null}
     </Grid>

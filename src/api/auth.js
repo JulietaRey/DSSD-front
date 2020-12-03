@@ -20,3 +20,13 @@ export const signInCall = async (data) => {
   return {userId: datos.userId, rolId: datos.rolId};
 
 };
+
+export const signUpCall = async (data) => {
+  const res = await fetch(`${url}/auth/signup`, {
+    method: 'POST',
+    body: new URLSearchParams(data),
+    credentials: 'omit',
+  });
+  return res;
+
+}

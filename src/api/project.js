@@ -33,7 +33,8 @@ export const saveProject = async (data) => {
 
 export const getProjects = async (userId) => {
   try {
-    const res = await fetch(`${url}/project?ownerId=${userId}`, {
+    const path = userId ? `project?ownerId=${userId}`: 'project';
+    const res = await fetch(`${url}/${path}`, {
       method: 'GET',
       headers: {
         'Content-type': 'application/json; charset=UTF-8',
